@@ -13,13 +13,13 @@ A full 1:1 port of [roam-code](https://github.com/Cranot/roam-code) from Python 
 | **1. Foundation** | Index pipeline, DB, Python extractor | Done | 15 files |
 | **2. Graph Analysis** | PageRank, Tarjan SCC, Louvain clusters, health/map commands | Done | 9 files |
 | **3. Languages + Complexity + Git** | 8 language extractors, Halstead metrics, git stats, file roles | Done | 11 files |
-| 4. Essential Commands | Top 15 commands (understand, context, describe, dead, diff, etc.) | Planned | ~18 files |
+| **4. Essential Commands** | 16 daily-use commands + 4 shared modules | Done | 20 files |
 | 5. Remaining Commands + SARIF | All 70+ commands, SARIF 2.1.0 export, anomaly detection | Planned | ~45 files |
 | 6. Salesforce + Bridges + Workspace | Apex/Aura/VF extractors, protobuf bridge, multi-repo workspace | Planned | ~12 files |
 | 7. MCP Server + Test Suite | 20+ MCP tools, 33 test files | Planned | ~35 files |
 | 8. Polish | Cross-platform testing, npm publish, GitHub Action | Planned | — |
 
-**Current:** 8,279 lines of source across 35 files. Phases 1-3 complete and verified.
+**Current:** ~12,000 lines of source across 55 files. Phases 1-4 complete and verified.
 
 ---
 
@@ -107,13 +107,32 @@ roam-code-js/
       clusters.js                      # Louvain community detection
       cycles.js                        # Tarjan SCC + propagation cost
       layers.js                        # Topological layering + violations
+      pathfinding.js                   # Yen's k-shortest paths
     output/
       formatter.js                     # Tables, JSON envelopes
     commands/
       cmd-index.js                     # Build/rebuild index
       cmd-health.js                    # Health score 0-100
       cmd-map.js                       # Codebase architecture map
+      cmd-search.js                    # Search symbols by pattern
+      cmd-symbol.js                    # Symbol detail with callers/callees
+      cmd-file.js                      # File skeleton with symbol tree
+      cmd-deps.js                      # File import/imported-by graph
+      cmd-uses.js                      # All consumers of a symbol
+      cmd-weather.js                   # Churn × complexity hotspots
+      cmd-clusters.js                  # Louvain community analysis
+      cmd-layers.js                    # Topological dependency layers
+      cmd-trace.js                     # K-shortest paths (Yen's algorithm)
+      cmd-context.js                   # AI-optimized symbol context
+      cmd-diff.js                      # Blast radius of changes
+      cmd-preflight.js                 # Pre-commit risk analysis
+      cmd-dead.js                      # Unreferenced export detection
+      cmd-describe.js                  # Markdown project description
+      cmd-understand.js                # Single-call project briefing
       resolve.js                       # Symbol resolver helper
+      graph-helpers.js                 # Adjacency + BFS utilities
+      changed-files.js                 # Git diff file resolution
+      context-helpers.js               # Data gathering for context/diff/preflight
 ```
 
 ### 10-Stage Indexing Pipeline
@@ -174,52 +193,47 @@ node bin/roam.js map /path/to/your/project
 
 ---
 
-## CLI Commands (Phases 1-3)
+## CLI Commands (19 commands)
 
-### `roam index [path] [--force]`
+### Core Commands (Phases 1-3)
 
-Build or update the semantic index for a project. Creates a `.roam/index.db` SQLite database.
+| Command | Description |
+|---------|-------------|
+| `roam index [--force] [--verbose]` | Build or rebuild the codebase index |
+| `roam health [--json]` | Health score 0-100 with modularity, dependencies, complexity |
+| `roam map [-n count] [--full] [--json]` | Architecture overview with top symbols by PageRank |
 
-```
-$ roam index --force /workspace
-Indexing /workspace
-Discovering files...
-  Found 9 files
-  9 added, 0 modified, 0 removed
-  Processing 9/9 files...
-Resolving references...
-  7 symbol edges
-Building file-level edges...
-  4 file edges
-Computing graph metrics...
-  58 symbol metrics stored
-Detecting clusters...
-  58 symbols assigned to 52 clusters
-Collecting git stats...
-  1 commits, 0 co-change pairs
-Done. 9 files, 58 symbols, 7 edges. (0.5s)
-```
+### Query Commands (Phase 4)
 
-### `roam health [path] [--json]`
+| Command | Description |
+|---------|-------------|
+| `roam search <pattern> [--kind] [--full]` | Search symbols by name pattern, ranked by PageRank |
+| `roam symbol <name> [--full]` | Symbol detail: signature, metrics, callers, callees |
+| `roam file <paths...> [--changed] [--deps-of]` | File skeleton with symbol tree and kind summary |
+| `roam deps <path> [--full]` | File import/imported-by graph with used symbols |
+| `roam uses <name> [--full]` | All consumers of a symbol grouped by edge kind |
 
-Compute a 0-100 health score based on modularity, dependency structure, test coverage, and code complexity.
+### Architecture Commands (Phase 4)
 
-```
-$ roam health /workspace --json
-{
-  "score": 98,
-  "grade": "A+",
-  "breakdown": {
-    "modularity": { "score": 100, "weight": 0.20 },
-    "dependency_health": { "score": 100, "weight": 0.25 },
-    ...
-  }
-}
-```
+| Command | Description |
+|---------|-------------|
+| `roam clusters [--min-size]` | Louvain communities with cohesion metrics, mega-cluster detection |
+| `roam layers` | Topological dependency layers with architecture classification |
+| `roam trace <source> <target> [-k paths]` | K-shortest dependency paths with coupling classification |
+| `roam weather [-n count]` | Code hotspots ranked by churn × complexity |
 
-### `roam map [path] [--json]`
+### Analysis Commands (Phase 4)
 
-Generate an architecture overview with the most important symbols ranked by PageRank centrality.
+| Command | Description |
+|---------|-------------|
+| `roam context <names...> [--task] [--for-file]` | AI-optimized context: callers, callees, tests, blast radius |
+| `roam diff [range] [--staged] [--tests] [--coupling]` | Blast radius and test impact of changed files |
+| `roam preflight [target] [--staged]` | Pre-commit risk analysis with 6 automated checks |
+| `roam dead [--by-directory] [--aging] [--decay]` | Unreferenced export detection with confidence scoring |
+| `roam describe [--write] [--agent-prompt]` | Generate Markdown project description |
+| `roam understand [--full]` | Single-call project briefing with all sections |
+
+All commands support `--json` for structured JSON output.
 
 ---
 
@@ -343,20 +357,7 @@ For every function/method/constructor, the indexer computes:
 
 ---
 
-## Roadmap (Phases 4-8)
-
-### Phase 4: Essential Commands
-The 15 most-used daily workflow commands:
-- `understand` — Full codebase briefing
-- `context` — AI-optimized context for a symbol
-- `describe` — Full symbol documentation
-- `dead` — Dead code detection
-- `diff` — Blast radius of changes
-- `preflight` — Pre-change safety check
-- `trace` — Call path tracing (Yen's k-shortest paths)
-- `search`, `symbol`, `file` — Query commands
-- `deps`, `clusters`, `layers` — Architecture commands
-- `weather`, `uses` — Trend and usage commands
+## Roadmap (Phases 5-8)
 
 ### Phase 5: Full Command Set + SARIF
 - All 70+ commands ported from Python

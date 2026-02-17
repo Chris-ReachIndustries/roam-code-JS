@@ -9,7 +9,7 @@ import { batchedIn } from '../db/connection.js';
  * Build condensation DAG from SCC decomposition.
  * Returns { nodeToScc, sccAdj, sccCount }.
  */
-function condensation(G) {
+export function condensation(G) {
   const sccs = tarjanSCC(G);
 
   // Map each node to its SCC index
@@ -44,7 +44,7 @@ function condensation(G) {
  * Kahn's topological sort on the condensed DAG.
  * Returns array of sccIds in topological order.
  */
-function topoSort(sccAdj, sccPreds, sccCount) {
+export function topoSort(sccAdj, sccPreds, sccCount) {
   const inDegree = new Map();
   for (let i = 0; i < sccCount; i++) {
     inDegree.set(i, sccPreds.get(i).size);

@@ -149,3 +149,48 @@ export const SYMBOLS_IN_DIR = `
     WHERE f.path LIKE ? AND s.is_exported = 1
     ORDER BY f.path, s.line_start
 `;
+
+// Phase 4 additions
+
+// Complexity metrics per symbol
+export const SYMBOL_METRICS = 'SELECT * FROM symbol_metrics WHERE symbol_id = ?';
+
+// Cluster members with PageRank
+export const CLUSTER_MEMBERS = `
+    SELECT s.id, s.name, s.kind, f.path as file_path, COALESCE(gm.pagerank, 0) as pagerank
+    FROM clusters c
+    JOIN symbols s ON c.symbol_id = s.id
+    JOIN files f ON s.file_id = f.id
+    LEFT JOIN graph_metrics gm ON s.id = gm.symbol_id
+    WHERE c.cluster_id = ?
+    ORDER BY COALESCE(gm.pagerank, 0) DESC
+`;
+
+// File stats by path
+export const FILE_STATS_BY_PATH = `
+    SELECT fs.*, f.path, f.language
+    FROM file_stats fs JOIN files f ON fs.file_id = f.id
+    WHERE f.path = ?
+`;
+
+// Distribution queries
+export const LANGUAGE_DISTRIBUTION = `
+    SELECT language, COUNT(*) as cnt FROM files
+    WHERE language IS NOT NULL
+    GROUP BY language ORDER BY cnt DESC
+`;
+export const SYMBOL_KIND_DISTRIBUTION = `
+    SELECT kind, COUNT(*) as cnt FROM symbols
+    GROUP BY kind ORDER BY cnt DESC
+`;
+
+// All symbols with file + optional PageRank (for batch lookups)
+export const ALL_SYMBOLS_WITH_FILE = `
+    SELECT s.*, f.path as file_path
+    FROM symbols s JOIN files f ON s.file_id = f.id
+`;
+
+// File search (fuzzy)
+export const FILE_SEARCH = `
+    SELECT * FROM files WHERE path LIKE ? ORDER BY path LIMIT ?
+`;
