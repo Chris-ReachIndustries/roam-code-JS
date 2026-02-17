@@ -1,0 +1,27 @@
+services:
+  roam:
+    build: .
+    volumes:
+      # Mount a test project to index
+      - ./test-project:/workspace
+    working_dir: /workspace
+    entrypoint: ["node", "/app/bin/roam.js"]
+
+  # Development shell — use for running tests, debugging, etc.
+  dev:
+    build: .
+    volumes:
+      - .:/app
+      - ./test-project:/workspace
+    working_dir: /app
+    entrypoint: ["bash"]
+    stdin_open: true
+    tty: true
+
+  # Run tests
+  test:
+    build: .
+    volumes:
+      - .:/app
+    working_dir: /app
+    entrypoint: ["npx", "vitest", "run"]

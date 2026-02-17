@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Roam index artifacts
+.roam/
+*.db
+*.db-wal
+*.db-shm
+
+# Build / coverage
+coverage/
+dist/
+out/
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Test project artifacts
+test-project/.roam/
+test-project/.git/

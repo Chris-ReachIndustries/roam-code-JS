@@ -1,0 +1,60 @@
+{
+  "name": "roam-code",
+  "version": "8.3.0",
+  "description": "Instant codebase comprehension for AI coding agents — zero Python dependency",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "roam": "bin/roam.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "roam": "node bin/roam.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/ tests/"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "commander": "^12.0.0",
+    "graphology": "^0.25.0",
+    "graphology-communities-louvain": "^2.0.0",
+    "graphology-metrics": "^2.0.0",
+    "tree-sitter": "^0.22.0",
+    "tree-sitter-python": "^0.23.0",
+    "tree-sitter-javascript": "^0.23.0",
+    "tree-sitter-typescript": "^0.23.0",
+    "tree-sitter-go": "^0.23.0",
+    "tree-sitter-java": "^0.23.0",
+    "tree-sitter-rust": "^0.23.0",
+    "tree-sitter-c": "^0.23.0",
+    "tree-sitter-cpp": "^0.23.0"
+  },
+  "optionalDependencies": {
+    "graphology-components": "^2.0.0",
+    "graphology-shortest-path": "^2.0.0",
+    "graphology-traversal": "^2.0.0",
+    "graphology-operators": "^1.0.0",
+    "tree-sitter-php": "^0.23.0",
+    "tree-sitter-ruby": "^0.23.0",
+    "tree-sitter-html": "^0.23.0",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0"
+  },
+  "keywords": [
+    "codebase",
+    "code-analysis",
+    "tree-sitter",
+    "ai-tools",
+    "cli",
+    "static-analysis",
+    "mcp"
+  ],
+  "license": "MIT"
+}
