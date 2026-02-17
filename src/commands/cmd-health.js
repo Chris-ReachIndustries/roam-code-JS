@@ -9,6 +9,7 @@ import { findCycles, findWeakestEdge, formatCycles, propagationCost, algebraicCo
 import { detectLayers, findViolations } from '../graph/layers.js';
 import { abbrevKind, loc, formatTable, toJson, jsonEnvelope } from '../output/formatter.js';
 import { ensureIndex } from './resolve.js';
+import { createSarifLog, addRun, writeSarif, healthToSarif } from '../output/sarif.js';
 
 const FRAMEWORK_NAMES = new Set([
   '__init__', '__str__', '__repr__', '__new__', '__del__', '__enter__',
@@ -250,6 +251,29 @@ export async function execute(opts, globalOpts) {
     else if (healthScore >= 60) verdict = `Fair codebase (${healthScore}/100) \u2014 ${sevCounts.CRITICAL} critical, ${sevCounts.WARNING} warnings`;
     else if (healthScore >= 40) verdict = `Needs attention (${healthScore}/100) \u2014 ${sevCounts.CRITICAL} critical, ${sevCounts.WARNING} warnings`;
     else verdict = `Unhealthy codebase (${healthScore}/100) \u2014 ${sevCounts.CRITICAL} critical, ${sevCounts.WARNING} warnings`;
+
+    // SARIF export
+    if (opts.sarif) {
+      const sarifItems = [];
+      for (const c of formattedCycles) {
+        sarifItems.push({ name: `cycle-${c.size}`, kind: 'cycle', category: 'cycle', severity: c.severity, detail: `Cycle of ${c.size} symbols across ${c.directories} dirs` });
+      }
+      for (const g of godItems) {
+        sarifItems.push({ name: g.name, kind: g.kind, file: g.file, category: 'god', severity: g.severity, detail: `God component: degree=${g.degree}` });
+      }
+      for (const b of bnItems) {
+        sarifItems.push({ name: b.name, kind: b.kind, file: b.file, category: 'bottleneck', severity: b.severity, detail: `Bottleneck: betweenness=${b.betweenness}` });
+      }
+      for (const v of violations) {
+        const src = vLookup.get(v.source) || {};
+        sarifItems.push({ name: src.name || '?', category: 'layer', severity: 'WARNING', detail: `Layer violation: L${v.source_layer} → L${v.target_layer}` });
+      }
+      const log = createSarifLog();
+      const { rules, results } = healthToSarif(sarifItems);
+      addRun(log, 'health', rules, results);
+      writeSarif(log, opts.sarif);
+      console.log(`SARIF written to ${opts.sarif}`);
+    }
 
     if (jsonMode) {
       const issueCount = cycles.length + godItems.length + bnItems.length + violations.length;

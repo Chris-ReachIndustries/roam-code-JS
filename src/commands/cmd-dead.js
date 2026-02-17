@@ -9,6 +9,7 @@ import { formatTable, jsonEnvelope, toJson, abbrevKind, loc } from '../output/fo
 import { batchedIn } from '../db/connection.js';
 import { isTest } from '../index/file-roles.js';
 import { dirname } from 'node:path';
+import { createSarifLog, addRun, writeSarif, deadCodeToSarif } from '../output/sarif.js';
 
 // Exclusion patterns
 const EXCLUDED_NAMES = new Set(['__init__', '__main__', 'main', 'setup', 'teardown']);
@@ -96,6 +97,15 @@ export async function execute(opts, globalOpts) {
 
     // Total effort
     const totalLineCount = candidates.reduce((sum, s) => sum + ((s.line_end || 0) - (s.line_start || 0) + 1), 0);
+
+    // SARIF export
+    if (opts.sarif) {
+      const log = createSarifLog();
+      const { rules, results } = deadCodeToSarif(candidates);
+      addRun(log, 'dead-code', rules, results);
+      writeSarif(log, opts.sarif);
+      console.log(`SARIF written to ${opts.sarif}`);
+    }
 
     if (jsonMode) {
       console.log(toJson(jsonEnvelope('dead', {

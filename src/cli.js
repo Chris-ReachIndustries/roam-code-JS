@@ -35,6 +35,7 @@ program
   .command('health')
   .description('Show code health: cycles, god components, bottlenecks')
   .option('--no-framework', 'Filter out framework/boilerplate symbols')
+  .option('--sarif <path>', 'Export health issues to SARIF file')
   .action(async (opts) => {
     const mod = await import('./commands/cmd-health.js');
     await mod.execute(opts, program.opts());
@@ -202,6 +203,7 @@ program
   .option('--effort', 'Show removal effort estimate')
   .option('--decay', 'Show decay priority score')
   .option('--clusters', 'Show connected dead code clusters')
+  .option('--sarif <path>', 'Export dead code to SARIF file')
   .action(async (opts) => {
     const mod = await import('./commands/cmd-dead.js');
     await mod.execute({
@@ -231,5 +233,171 @@ program
   .option('--full', 'Show extended results')
   .action(async (opts) => {
     const mod = await import('./commands/cmd-understand.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// --- Phase 5 Commands ---
+
+// Complexity
+program
+  .command('complexity')
+  .description('Show symbols ranked by cognitive complexity')
+  .option('--threshold <number>', 'Minimum complexity threshold', parseInt, 10)
+  .option('--top <number>', 'Number of results', parseInt, 50)
+  .option('--by-file', 'Aggregate complexity per file')
+  .option('--sarif <path>', 'Export to SARIF file')
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-complexity.js');
+    await mod.execute({ ...opts, byFile: opts.byFile }, program.opts());
+  });
+
+// Coupling
+program
+  .command('coupling')
+  .description('Show co-change coupling between files')
+  .argument('[paths...]', 'File paths to analyze')
+  .option('--min-strength <number>', 'Minimum co-change count', parseInt, 3)
+  .option('--top <number>', 'Number of results', parseInt, 50)
+  .action(async (paths, opts) => {
+    const mod = await import('./commands/cmd-coupling.js');
+    await mod.execute({ ...opts, paths, minStrength: opts.minStrength }, program.opts());
+  });
+
+// Fan
+program
+  .command('fan')
+  .description('Show fan-in/fan-out metrics for symbols')
+  .option('--in', 'Show only fan-in')
+  .option('--out', 'Show only fan-out')
+  .option('--threshold <number>', 'Minimum fan threshold', parseInt, 5)
+  .option('--top <number>', 'Number of results', parseInt, 50)
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-fan.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// Grep
+program
+  .command('grep')
+  .description('Semantic grep across symbol names, signatures, and qualified names')
+  .argument('<pattern>', 'Search pattern')
+  .option('-k, --kind <kind>', 'Filter by symbol kind')
+  .option('--file <glob>', 'Filter by file path')
+  .option('--context', 'Show callers/callees counts')
+  .action(async (pattern, opts) => {
+    const mod = await import('./commands/cmd-grep.js');
+    await mod.execute({ ...opts, pattern }, program.opts());
+  });
+
+// Risk
+program
+  .command('risk')
+  .description('Show composite risk score per file')
+  .argument('[paths...]', 'File paths to analyze')
+  .option('--top <number>', 'Number of results', parseInt, 30)
+  .action(async (paths, opts) => {
+    const mod = await import('./commands/cmd-risk.js');
+    await mod.execute({ ...opts, paths }, program.opts());
+  });
+
+// Fitness
+program
+  .command('fitness')
+  .description('Evaluate project fitness against quality gate presets')
+  .option('--preset <name>', 'Quality gate preset name', 'default')
+  .option('--gate', 'Exit with code 1 if any gate fails (for CI)')
+  .option('--sarif <path>', 'Export gate violations to SARIF')
+  .option('--snapshot', 'Record metrics snapshot for trend tracking')
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-fitness.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// Conventions
+program
+  .command('conventions')
+  .description('Detect naming convention violations')
+  .option('--sarif <path>', 'Export violations to SARIF')
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-conventions.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// Breaking
+program
+  .command('breaking')
+  .description('Detect potentially breaking changes in a diff')
+  .argument('[commit_range]', 'Git commit range')
+  .option('--staged', 'Analyze staged changes only')
+  .action(async (commitRange, opts) => {
+    const mod = await import('./commands/cmd-breaking.js');
+    await mod.execute({ ...opts, commitRange }, program.opts());
+  });
+
+// Coverage Gaps
+program
+  .command('coverage-gaps')
+  .description('Find high-value symbols with no test coverage')
+  .option('--threshold <number>', 'Minimum gap score threshold', parseFloat, 0)
+  .option('--top <number>', 'Number of results', parseInt, 50)
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-coverage-gaps.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// Affected Tests
+program
+  .command('affected-tests')
+  .description('Find test files affected by changed code')
+  .argument('[commit_range]', 'Git commit range')
+  .option('--staged', 'Analyze staged changes only')
+  .option('--transitive', 'Include transitive dependencies')
+  .action(async (commitRange, opts) => {
+    const mod = await import('./commands/cmd-affected-tests.js');
+    await mod.execute({ ...opts, commitRange }, program.opts());
+  });
+
+// PR Risk
+program
+  .command('pr-risk')
+  .description('Comprehensive PR risk assessment')
+  .argument('[commit_range]', 'Git commit range')
+  .option('--staged', 'Analyze staged changes only')
+  .option('--sarif <path>', 'Export risk findings to SARIF')
+  .action(async (commitRange, opts) => {
+    const mod = await import('./commands/cmd-pr-risk.js');
+    await mod.execute({ ...opts, commitRange }, program.opts());
+  });
+
+// Trend
+program
+  .command('trend')
+  .description('Show metrics trends over time')
+  .option('--metric <name>', 'Filter by specific metric')
+  .option('--last <number>', 'Number of snapshots to analyze', parseInt, 20)
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-trend.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// Alerts
+program
+  .command('alerts')
+  .description('Detect statistical anomalies in metrics history')
+  .option('--threshold <number>', 'Z-score threshold for anomaly', parseFloat, 2)
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-alerts.js');
+    await mod.execute(opts, program.opts());
+  });
+
+// Report
+program
+  .command('report')
+  .description('Generate comprehensive project report')
+  .option('--format <format>', 'Output format: md, json, sarif', 'md')
+  .option('-o, --output <path>', 'Output file path')
+  .option('--preset <name>', 'Quality gate preset name', 'default')
+  .action(async (opts) => {
+    const mod = await import('./commands/cmd-report.js');
     await mod.execute(opts, program.opts());
   });
