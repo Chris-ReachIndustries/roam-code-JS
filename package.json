@@ -11,6 +11,21 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Chris-ReachIndustries/roam-code-JS.git"
+  },
+  "author": "Chris-ReachIndustries",
+  "homepage": "https://github.com/Chris-ReachIndustries/roam-code-JS#readme",
+  "bugs": {
+    "url": "https://github.com/Chris-ReachIndustries/roam-code-JS/issues"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "roam": "node bin/roam.js",
     "test": "vitest run",

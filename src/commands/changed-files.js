@@ -50,7 +50,7 @@ export function getChangedFiles(root, { staged = false, commitRange = null, base
           timeout: 10000,
           stdio: ['pipe', 'pipe', 'pipe'],
         });
-        return result.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+        return result.split('\n').map(l => l.trim()).filter(l => l.length > 0).map(p => p.replace(/\\/g, '/'));
       } catch { /* fall through */ }
     }
     return [];

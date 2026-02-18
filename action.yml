@@ -1,0 +1,72 @@
+name: 'Roam Code Analysis'
+description: 'Run roam-code codebase analysis in your CI pipeline'
+author: 'Chris-ReachIndustries'
+
+branding:
+  icon: 'search'
+  color: 'blue'
+
+inputs:
+  command:
+    description: 'Roam command to run (e.g., health, understand, preflight, dead)'
+    required: false
+    default: 'health'
+  args:
+    description: 'Additional arguments for the command (e.g., --json, --sarif report.sarif)'
+    required: false
+    default: ''
+  working-directory:
+    description: 'Directory to analyze (defaults to repository root)'
+    required: false
+    default: '.'
+
+outputs:
+  result:
+    description: 'Command output (text or JSON)'
+  exit-code:
+    description: 'Command exit code (0 = success)'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install build tools
+      shell: bash
+      run: |
+        if ! command -v g++ &> /dev/null; then
+          sudo apt-get update && sudo apt-get install -y python3 make g++
+        fi
+
+    - name: Install roam-code
+      shell: bash
+      run: |
+        cd ${{ github.action_path }}
+        npm install --force
+        npm link
+
+    - name: Index codebase
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: roam index
+
+    - name: Run analysis
+      id: analysis
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: |
+        set +e
+        OUTPUT=$(roam ${{ inputs.command }} ${{ inputs.args }} 2>&1)
+        EXIT_CODE=$?
+        echo "exit-code=$EXIT_CODE" >> $GITHUB_OUTPUT
+
+        EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+        echo "result<<$EOF" >> $GITHUB_OUTPUT
+        echo "$OUTPUT" >> $GITHUB_OUTPUT
+        echo "$EOF" >> $GITHUB_OUTPUT
+
+        echo "$OUTPUT"
+        exit $EXIT_CODE
