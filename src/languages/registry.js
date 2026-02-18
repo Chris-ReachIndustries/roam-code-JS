@@ -51,6 +51,8 @@ const EXTENSION_MAP = {
   // Visual FoxPro
   '.prg': 'foxpro',
   '.scx': 'foxpro',
+  // Protobuf
+  '.proto': 'protobuf',
 };
 
 // All supported language names
@@ -60,7 +62,7 @@ export const SUPPORTED_LANGUAGES = new Set([
   'ruby', 'php', 'c_sharp', 'kotlin', 'swift', 'scala',
   'vue', 'svelte',
   'apex', 'sfxml', 'aura', 'visualforce',
-  'foxpro',
+  'foxpro', 'protobuf',
 ]);
 
 /**
@@ -90,6 +92,11 @@ async function _loadExtractors() {
     { RustExtractor },
     { CExtractor, CppExtractor },
     { GenericExtractor },
+    { ApexExtractor },
+    { AuraExtractor },
+    { VisualForceExtractor },
+    { SfxmlExtractor },
+    { ProtobufExtractor },
   ] = await Promise.all([
     import('./python.js'),
     import('./javascript.js'),
@@ -99,6 +106,11 @@ async function _loadExtractors() {
     import('./rust.js'),
     import('./c.js'),
     import('./generic.js'),
+    import('./apex.js'),
+    import('./aura.js'),
+    import('./visualforce.js'),
+    import('./sfxml.js'),
+    import('./protobuf.js'),
   ]);
 
   _extractorClasses.python = PythonExtractor;
@@ -110,6 +122,11 @@ async function _loadExtractors() {
   _extractorClasses.rust = RustExtractor;
   _extractorClasses.c = CExtractor;
   _extractorClasses.cpp = CppExtractor;
+  _extractorClasses.apex = ApexExtractor;
+  _extractorClasses.aura = AuraExtractor;
+  _extractorClasses.visualforce = VisualForceExtractor;
+  _extractorClasses.sfxml = SfxmlExtractor;
+  _extractorClasses.protobuf = ProtobufExtractor;
   _extractorClasses.GenericExtractor = GenericExtractor;
 }
 

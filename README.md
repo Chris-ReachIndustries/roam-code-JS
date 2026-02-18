@@ -15,11 +15,11 @@ A full 1:1 port of [roam-code](https://github.com/Cranot/roam-code) from Python 
 | **3. Languages + Complexity + Git** | 8 language extractors, Halstead metrics, git stats, file roles | Done | 11 files |
 | **4. Essential Commands** | 16 daily-use commands + 4 shared modules | Done | 20 files |
 | **5. Advanced Commands + SARIF** | 14 new commands, SARIF 2.1.0, anomaly detection, quality gates | Done | 21 files |
-| 6. Salesforce + Bridges + Workspace | Apex/Aura/VF extractors, protobuf bridge, multi-repo workspace | Planned | ~12 files |
+| **6. Salesforce + Protobuf + Workspace** | 5 dedicated extractors, multi-repo workspace, 5 new commands | Done | 11 files |
 | 7. MCP Server + Test Suite | 20+ MCP tools, 33 test files | Planned | ~35 files |
 | 8. Polish | Cross-platform testing, npm publish, GitHub Action | Planned | — |
 
-**Current:** 14,673 lines of source across 73 files. Phases 1-5 complete and verified.
+**Current:** 16,514 lines of source across 80 files. Phases 1-6 complete and verified.
 
 ---
 
@@ -38,15 +38,25 @@ A full 1:1 port of [roam-code](https://github.com/Cranot/roam-code) from Python 
 | C | `c.js` (347 lines) | functions, structs, unions, enums, typedefs, `#include` |
 | C++ | `c.js` (extends C) | + namespaces, classes, templates, operator overloads |
 
+### Salesforce Extractors (dedicated)
+
+| Language | Extractor | Symbols Extracted |
+|----------|-----------|-------------------|
+| Apex | `apex.js` (extends Java) | classes, triggers, methods with @AuraEnabled/@IsTest/@Future annotations, SOQL queries, DML operations, inner classes, sharing modes |
+| Aura | `aura.js` (regex) | components, interfaces, events, applications, attributes, registered events, expression bindings ({!v./c./helper.}), component refs |
+| VisualForce | `visualforce.js` (regex) | pages with controller/extensions, action methods, merge field expressions, custom component refs |
+| SFXML | `sfxml.js` (regex) | CustomObject fields/validation rules/record types, flow elements, field relationships |
+| Protobuf | `protobuf.js` (regex) | packages, messages (nested), enums, services, rpc methods, fields with types, oneof groups |
+
 ### Generic Fallback (tree-sitter AST walking)
 
 For any language with a tree-sitter grammar but no dedicated extractor, the `GenericExtractor` provides basic symbol/reference extraction:
 
-**Ruby, PHP, C#, Kotlin, Swift, Scala, Vue, Svelte, Apex, Aura, VisualForce**
+**Ruby, PHP, C#, Kotlin, Swift, Scala, Vue, Svelte**
 
 ### File Extensions Supported
 
-`.py` `.pyi` `.js` `.jsx` `.mjs` `.cjs` `.ts` `.tsx` `.mts` `.cts` `.go` `.rs` `.java` `.c` `.h` `.cpp` `.cxx` `.cc` `.hpp` `.hxx` `.hh` `.rb` `.php` `.cs` `.kt` `.kts` `.swift` `.scala` `.sc` `.cls` `.trigger` `.page` `.component` `.cmp` `.app` `.evt` `.intf` `.design` `.prg` `.scx` `.vue` `.svelte`
+`.py` `.pyi` `.js` `.jsx` `.mjs` `.cjs` `.ts` `.tsx` `.mts` `.cts` `.go` `.rs` `.java` `.c` `.h` `.cpp` `.cxx` `.cc` `.hpp` `.hxx` `.hh` `.rb` `.php` `.cs` `.kt` `.kts` `.swift` `.scala` `.sc` `.cls` `.trigger` `.page` `.component` `.cmp` `.app` `.evt` `.intf` `.design` `.prg` `.scx` `.proto` `.vue` `.svelte`
 
 ---
 
@@ -101,6 +111,15 @@ roam-code-js/
       rust.js                          # Rust extractor
       c.js                             # C + C++ extractors
       generic.js                       # GenericExtractor fallback
+      apex.js                          # Apex extractor (extends Java)
+      aura.js                          # Aura component extractor (regex)
+      visualforce.js                   # VisualForce page extractor (regex)
+      sfxml.js                         # Salesforce metadata XML extractor (regex)
+      protobuf.js                      # Protocol Buffer extractor (regex)
+    workspace/
+      config.js                        # Multi-repo workspace configuration
+      indexer.js                       # Cross-repo indexing pipeline
+      commands.js                      # Workspace CLI commands
     graph/
       builder.js                       # buildSymbolGraph (graphology)
       pagerank.js                      # Adaptive PageRank + centrality
@@ -224,7 +243,7 @@ node /path/to/roam-code-js/bin/roam.js diff --staged --tests --coupling
 
 ---
 
-## CLI Commands (33 commands)
+## CLI Commands (38 commands)
 
 ### Core Commands (Phases 1-3)
 
@@ -283,41 +302,51 @@ node /path/to/roam-code-js/bin/roam.js diff --staged --tests --coupling
 | `roam alerts [--threshold]` | Statistical anomaly detection (Modified Z-Score, Western Electric) |
 | `roam report [--format md\|json\|sarif] [-o path]` | Full project report in Markdown, JSON, or SARIF |
 
+### Workspace Commands (Phase 6)
+
+| Command | Description |
+|---------|-------------|
+| `roam workspace init [--name]` | Initialize a multi-repo workspace in the current directory |
+| `roam workspace add <path> [--alias]` | Add a repository to the workspace |
+| `roam workspace remove <alias>` | Remove a repository from the workspace |
+| `roam workspace list` | List configured repositories with status |
+| `roam workspace index [--force]` | Index all repos with cross-repo reference resolution |
+
 All commands support `--json` for structured JSON output. Commands marked with `--sarif` can export SARIF 2.1.0 static analysis results.
 
 ---
 
-## Smoke Test Results (Phase 5)
+## Smoke Test Results (Phase 6)
 
-### Indexing (7 files, 3 languages)
+### Indexing (14 files, 8 languages)
 
 ```
 $ roam index --force
-Files: 7  Symbols: 31  Edges: 22
-Languages: javascript=4, python=2, typescript=1
-Avg symbols/file: 4.4  Parse coverage: 100%
+Files: 14  Symbols: 89  Edges: 39
+Languages: javascript=4, apex=3, python=2, visualforce=1, typescript=1, sfxml=1, protobuf=1, aura=1
+Avg symbols/file: 6.4  Parse coverage: 100%
 ```
 
-### All 33 Commands Verified
+### All 38 Commands Verified
 
 | # | Command | Status | Sample Output |
 |---|---------|--------|---------------|
-| 1 | `roam index` | Pass | 7 files, 31 symbols, 22 edges |
-| 2 | `roam health` | Pass | Healthy codebase (97/100), 0 critical |
-| 3 | `roam map` | Pass | Top symbols by PageRank |
-| 4 | `roam search Calculator` | Pass | 1 result, PR: 0.0388 |
+| 1 | `roam index` | Pass | 14 files, 89 symbols, 39 edges |
+| 2 | `roam health` | Pass | Healthy codebase (95/100), 0 critical |
+| 3 | `roam map` | Pass | Top symbols by PageRank, 8 languages |
+| 4 | `roam search Calculator` | Pass | 1 result, PR: 0.0139 |
 | 5 | `roam symbol Calculator` | Pass | callers, callees, metrics |
 | 6 | `roam file src/app.js` | Pass | 1 class, 1 constructor, 1 method, 1 function |
 | 7 | `roam deps src/app.js` | Pass | 2 imports, used symbols |
 | 8 | `roam uses Logger` | Pass | 3 consumers (call, import) |
-| 9 | `roam weather` | Pass | 7 hotspots with churn × complexity |
-| 10 | `roam clusters` | Pass | 4 clusters, cohesion metrics |
+| 9 | `roam weather` | Pass | 14 hotspots with churn × complexity |
+| 10 | `roam clusters` | Pass | 6 clusters, cohesion metrics |
 | 11 | `roam layers` | Pass | 4 layers, architecture classification |
 | 12 | `roam trace Server fibonacci` | Pass | Paths with coupling classification |
 | 13 | `roam context Calculator` | Pass | callers, tests, blast radius |
 | 14 | `roam diff` | Pass | Changed file detection + blast radius |
-| 15 | `roam preflight` | Pass | 6 risk checks |
-| 16 | `roam dead` | Pass | 8 unreferenced exports, ~21 lines |
+| 15 | `roam preflight` | Pass | Pre-commit risk analysis |
+| 16 | `roam dead` | Pass | 20 unreferenced exports, ~100 lines |
 | 17 | `roam describe` | Pass | Markdown project description |
 | 18 | `roam understand` | Pass | Full project briefing |
 | 19 | `roam complexity --threshold 0` | Pass | Symbols ranked by cognitive complexity |
@@ -334,7 +363,57 @@ Avg symbols/file: 4.4  Parse coverage: 100%
 | 30 | `roam trend` | Pass | Metrics trend analysis |
 | 31 | `roam alerts` | Pass | Statistical anomaly detection |
 | 32 | `roam report` | Pass | Comprehensive project report |
-| 33 | `--json` (22 commands) | Pass | All produce valid JSON |
+| 33 | `roam workspace init` | Pass | Workspace initialized |
+| 34 | `roam workspace add` | Pass | Repos added with alias |
+| 35 | `roam workspace remove` | Pass | Repo removed |
+| 36 | `roam workspace list` | Pass | Repos with status |
+| 37 | `roam workspace index` | Pass | Cross-repo indexing |
+| 38 | `--json` (22+ commands) | Pass | All produce valid JSON |
+
+### Phase 6: Salesforce + Protobuf Extraction
+
+```
+--- Apex ---
+search AccountService      → class AccountService implements Schedulable
+file AccountService.cls     → 4 methods, 2 classes, 2 fields (annotations: @AuraEnabled, @InvocableMethod)
+search AccountServiceTest   → @IsTest class detected
+
+--- Aura ---
+file MyComponent.cmp        → 3 fields, 1 class (component + attributes + registered events)
+                              implements force:appHostable, expression bindings: {!v.accounts}, {!c.doInit}
+
+--- VisualForce ---
+file AccountPage.page       → page with controller=AccountService, extensions=AccountExtension
+
+--- SFXML ---
+file Account.object-meta.xml → CustomObject with fields (External_Id__c, Related_Contact__c), validation rules
+
+--- Protobuf ---
+file user.proto             → 20 fields, 7 messages, 4 constants, 3 rpc methods, 1 module, 1 enum
+symbol UserService          → service with CreateUser, GetUser, ListUsers RPCs
+```
+
+### Workspace Multi-Repo Test
+
+```
+$ roam workspace init --name "test-workspace"
+Workspace "test-workspace" initialized
+
+$ roam workspace add ./repo-a --alias frontend
+Added repo "frontend" (./repo-a)
+
+$ roam workspace add ./repo-b --alias backend
+Added repo "backend" (./repo-b)
+
+$ roam workspace index --force
+Workspace "test-workspace" — 2 repos
+Indexing repo: frontend → 1 file
+Indexing repo: backend → 1 file
+Workspace indexed: 2 files, 4 symbols, 0 edges
+
+$ roam search ServiceA
+→ Found in frontend/src/service.js
+```
 
 ### JSON Validation (22/22 commands)
 
@@ -357,49 +436,6 @@ VALID: dead.sarif         (unreferenced exports with confidence levels)
 VALID: complexity.sarif   (high cognitive complexity symbols)
 VALID: fitness.sarif      (quality gate violations)
 VALID: report.sarif       (combined analysis: dead code + complexity + health)
-```
-
-### Sample Command Outputs (Phase 5)
-
-**`roam fitness`**
-```
-Fitness — Preset: default
-
-Gate              Threshold  Actual  Op  Status
-----------------  ---------  ------  --  ------
-avg_complexity    25         0       <=  PASS
-max_complexity    75         0       <=  PASS
-dead_code_pct     15         3.2     <=  PASS
-test_ratio        0.1        0.143   >=  PASS
-cycle_count       5          0       <=  PASS
-
-Overall: PASS (5/5 gates)
-```
-
-**`roam complexity --threshold 0`**
-```
-Complex symbols (CC >= 0, showing 31):
-
-Name           Kind  CC  Nest  Params  Lines  Location
-fibonacci      fn    3   1     1       4      src/calculator.py:10
-...
-```
-
-**`roam risk`**
-```
-Risk Assessment (top 7 files):
-
-Risk    Score  Churn  Cmplx  Coupling  Tests  Path
-MEDIUM  0.450  1      0      0         0      src/app.js
-LOW     0.200  0      0      0         0      src/calculator.py
-...
-```
-
-### Previous Multi-Language Test (8 extractors)
-
-```
-Files: 9  Symbols: 58  Edges: 7
-Languages: python=2, typescript=1, rust=1, json=1, javascript=1, java=1, go=1, c=1
 ```
 
 ---
@@ -479,12 +515,7 @@ For every function/method/constructor, the indexer computes:
 
 ---
 
-## Roadmap (Phases 6-8)
-
-### Phase 6: Salesforce + Bridges + Workspace
-- Apex, Aura, VisualForce, SFXML extractors
-- Protobuf bridge (`.proto` -> generated stubs)
-- Multi-repo workspace support
+## Roadmap (Phases 7-8)
 
 ### Phase 7: MCP Server + Tests
 - 20+ MCP tools for AI agent integration

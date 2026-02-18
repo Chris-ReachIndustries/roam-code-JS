@@ -61,6 +61,8 @@ export const EXTENSION_MAP = {
   // Visual FoxPro
   '.prg': 'foxpro',
   '.scx': 'foxpro',
+  // Protobuf
+  '.proto': 'protobuf',
 };
 
 // Grammar aliasing: languages that reuse existing tree-sitter grammars
@@ -90,7 +92,7 @@ const GRAMMAR_PACKAGES = {
 };
 
 // Languages that use regex-only extraction (no tree-sitter grammar)
-export const REGEX_ONLY_LANGUAGES = new Set(['foxpro']);
+export const REGEX_ONLY_LANGUAGES = new Set(['foxpro', 'protobuf', 'sfxml', 'aura', 'visualforce']);
 
 // Parser cache
 const _parserCache = new Map();

@@ -401,3 +401,55 @@ program
     const mod = await import('./commands/cmd-report.js');
     await mod.execute(opts, program.opts());
   });
+
+// --- Phase 6: Workspace Commands ---
+
+const workspace = program
+  .command('workspace')
+  .description('Multi-repo workspace management');
+
+workspace
+  .command('init')
+  .description('Initialize a new workspace in the current directory')
+  .option('--name <name>', 'Workspace name')
+  .action(async (opts) => {
+    const mod = await import('./workspace/commands.js');
+    await mod.executeInit(opts, program.opts());
+  });
+
+workspace
+  .command('add')
+  .description('Add a repository to the workspace')
+  .argument('<path>', 'Path to the repository')
+  .option('--alias <name>', 'Alias for the repository')
+  .action(async (path, opts) => {
+    const mod = await import('./workspace/commands.js');
+    await mod.executeAdd({ ...opts, path }, program.opts());
+  });
+
+workspace
+  .command('remove')
+  .description('Remove a repository from the workspace')
+  .argument('<alias>', 'Alias of the repository to remove')
+  .action(async (alias, opts) => {
+    const mod = await import('./workspace/commands.js');
+    await mod.executeRemove({ ...opts, alias }, program.opts());
+  });
+
+workspace
+  .command('list')
+  .description('List configured repositories')
+  .action(async (opts) => {
+    const mod = await import('./workspace/commands.js');
+    await mod.executeList(opts, program.opts());
+  });
+
+workspace
+  .command('index')
+  .description('Index all repositories in the workspace')
+  .option('--force', 'Force full reindex')
+  .option('--verbose', 'Show detailed output')
+  .action(async (opts) => {
+    const mod = await import('./workspace/commands.js');
+    await mod.executeIndex(opts, program.opts());
+  });

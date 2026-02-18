@@ -1,0 +1,4 @@
+node_modules
+.roam
+.git
+*.db
