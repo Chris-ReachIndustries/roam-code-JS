@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/index.js",
   "bin": {
-    "roam": "bin/roam.js"
+    "roam": "bin/roam.js",
+    "roam-mcp": "bin/roam-mcp.js"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -31,7 +32,9 @@
     "tree-sitter-java": "^0.23.0",
     "tree-sitter-rust": "^0.23.0",
     "tree-sitter-c": "^0.23.0",
-    "tree-sitter-cpp": "^0.23.0"
+    "tree-sitter-cpp": "^0.23.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
   },
   "optionalDependencies": {
     "graphology-components": "^2.0.0",
@@ -40,8 +43,7 @@
     "graphology-operators": "^1.0.0",
     "tree-sitter-php": "^0.23.0",
     "tree-sitter-ruby": "^0.23.0",
-    "tree-sitter-html": "^0.23.0",
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "tree-sitter-html": "^0.23.0"
   },
   "devDependencies": {
     "vitest": "^2.0.0",

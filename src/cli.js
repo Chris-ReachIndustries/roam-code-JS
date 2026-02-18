@@ -453,3 +453,13 @@ workspace
     const mod = await import('./workspace/commands.js');
     await mod.executeIndex(opts, program.opts());
   });
+
+// --- Phase 7: MCP Server ---
+
+program
+  .command('mcp')
+  .description('Start MCP server for AI agent integration')
+  .action(async () => {
+    const { startServer } = await import('./mcp/server.js');
+    await startServer();
+  });

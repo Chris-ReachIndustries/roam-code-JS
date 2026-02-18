@@ -16,10 +16,10 @@ A full 1:1 port of [roam-code](https://github.com/Cranot/roam-code) from Python 
 | **4. Essential Commands** | 16 daily-use commands + 4 shared modules | Done | 20 files |
 | **5. Advanced Commands + SARIF** | 14 new commands, SARIF 2.1.0, anomaly detection, quality gates | Done | 21 files |
 | **6. Salesforce + Protobuf + Workspace** | 5 dedicated extractors, multi-repo workspace, 5 new commands | Done | 11 files |
-| 7. MCP Server + Test Suite | 20+ MCP tools, 33 test files | Planned | ~35 files |
+| **7. MCP Server + Test Suite** | 22 MCP tools, 30 test files, vitest framework | Done | 40 files |
 | 8. Polish | Cross-platform testing, npm publish, GitHub Action | Planned | — |
 
-**Current:** 16,514 lines of source across 80 files. Phases 1-6 complete and verified.
+**Current:** ~20,000 lines across 120+ files. Phases 1-7 complete and verified.
 
 ---
 
@@ -171,6 +171,24 @@ roam-code-js/
       graph-helpers.js                 # Adjacency + BFS utilities
       changed-files.js                 # Git diff file resolution
       context-helpers.js               # Data gathering for context/diff/preflight
+    mcp/
+      server.js                        # MCP server setup + transport
+      capture.js                       # stdout/stderr capture for tool execution
+      tools.js                         # 22 tool definitions with zod schemas
+      tool-names.js                    # Tool name constants
+  bin/
+    roam-mcp.js                        # Standalone MCP server entry point
+  tests/
+    helpers/
+      db-fixture.js                    # In-memory SQLite test fixtures
+      graph-fixture.js                 # Graph test fixtures (chain, cycle, star, diamond)
+    unit/                              # 6 unit test files
+    graph/                             # 5 graph algorithm tests
+    languages/                         # 10 language extractor tests
+    index/                             # 5 index pipeline tests
+    db/                                # 2 database tests
+    integration/                       # 1 integration test
+    mcp/                               # 1 MCP server test
 ```
 
 ### 10-Stage Indexing Pipeline
@@ -243,7 +261,7 @@ node /path/to/roam-code-js/bin/roam.js diff --staged --tests --coupling
 
 ---
 
-## CLI Commands (38 commands)
+## CLI Commands (39 commands)
 
 ### Core Commands (Phases 1-3)
 
@@ -311,6 +329,12 @@ node /path/to/roam-code-js/bin/roam.js diff --staged --tests --coupling
 | `roam workspace remove <alias>` | Remove a repository from the workspace |
 | `roam workspace list` | List configured repositories with status |
 | `roam workspace index [--force]` | Index all repos with cross-repo reference resolution |
+
+### MCP Command (Phase 7)
+
+| Command | Description |
+|---------|-------------|
+| `roam mcp` | Start MCP server for AI agent integration (stdio transport) |
 
 All commands support `--json` for structured JSON output. Commands marked with `--sarif` can export SARIF 2.1.0 static analysis results.
 
@@ -515,12 +539,82 @@ For every function/method/constructor, the indexer computes:
 
 ---
 
-## Roadmap (Phases 7-8)
+## MCP Server (Phase 7)
 
-### Phase 7: MCP Server + Tests
-- 20+ MCP tools for AI agent integration
-- 33 test files mirroring the Python test suite
-- vitest with `pool: 'forks'` for native addon compatibility
+The MCP (Model Context Protocol) server exposes 22 tools for AI agent integration. It works with Claude Desktop, VS Code extensions, and any MCP-compatible client.
+
+### Configuration (Claude Desktop)
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "roam": {
+      "command": "node",
+      "args": ["/path/to/roam-code-js/bin/roam-mcp.js"],
+      "env": { "CWD": "/path/to/your/project" }
+    }
+  }
+}
+```
+
+### MCP Tools (22 tools)
+
+| Tool | Description | Key Parameters |
+|------|-------------|----------------|
+| `understand` | Project briefing | `full?: bool` |
+| `health` | Code health score | `no_framework?: bool` |
+| `search_symbol` | Search symbols | `pattern: string, kind?: string` |
+| `context` | Symbol context | `names: string[], task?: enum` |
+| `trace` | Dependency paths | `source: string, target: string` |
+| `impact` | Change blast radius | `commit_range?, staged?: bool` |
+| `file_info` | File skeleton | `paths: string[]` |
+| `preflight` | Pre-commit checks | `target?, staged?: bool` |
+| `dead_code` | Unreferenced exports | `all?: bool` |
+| `repo_map` | Architecture map | `count?, budget?` |
+| `breaking_changes` | Breaking changes | `commit_range?, staged?: bool` |
+| `affected_tests` | Test impact | `commit_range?, transitive?: bool` |
+| `pr_risk` | PR risk assessment | `commit_range?, staged?: bool` |
+| `complexity_report` | Complexity analysis | `threshold?, top?` |
+| `coverage_gaps` | Untested symbols | `threshold?, top?` |
+| `risk` | File risk scores | `paths?, top?` |
+| `clusters` | Community clusters | `min_size?` |
+| `layers` | Dependency layers | — |
+| `coupling` | Co-change coupling | `paths?, min_strength?` |
+| `conventions` | Naming violations | — |
+| `deps` | File dependencies | `path: string` |
+| `uses` | Symbol consumers | `name: string` |
+
+---
+
+## Test Suite (Phase 7)
+
+30 test files with 274 tests using vitest with `pool: 'forks'` (required for native addons).
+
+### Test Results
+
+```
+ Test Files  30 passed (30)
+      Tests  274 passed (274)
+   Duration  13.35s
+```
+
+### Test Categories
+
+| Category | Files | Tests | Coverage |
+|----------|-------|-------|----------|
+| Unit tests | 6 | 110 | anomaly, file-roles, formatter, gate-presets, sarif, test-conventions |
+| Graph algorithms | 5 | 42 | cycles, pagerank, clusters, layers, pathfinding |
+| Language extractors | 10 | 61 | python, javascript, typescript, go, java, rust, c, apex, aura, protobuf |
+| Index pipeline | 5 | 28 | parser, discovery, incremental, relations, complexity |
+| Database | 2 | 12 | schema, connection |
+| Integration | 1 | 7 | DB fixture queries |
+| MCP server | 1 | 11 | captureOutput, tool registration |
+
+---
+
+## Roadmap (Phase 8)
 
 ### Phase 8: Polish
 - Cross-platform testing (Windows, macOS, Linux)
